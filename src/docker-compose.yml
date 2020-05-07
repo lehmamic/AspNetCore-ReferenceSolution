@@ -1,0 +1,9 @@
+version: '3.7'
+
+services:
+  demo:
+    image: demo:${DOCKER_TAG}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "3000:80"
