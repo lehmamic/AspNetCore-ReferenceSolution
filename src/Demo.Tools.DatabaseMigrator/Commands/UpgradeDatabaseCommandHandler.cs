@@ -1,13 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using DbUp;
 using DbUp.Engine;
 using Demo.Tools.DatabaseMigrator.Utils;
 using JetBrains.Annotations;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Demo.Tools.DatabaseMigrator.Commands
 {

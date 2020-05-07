@@ -3,7 +3,7 @@
     <PropertyGroup>
       <OutputType>Exe</OutputType>
       <TargetFramework>netcoreapp3.1</TargetFramework>
-      <CodeAnalysisRuleSet>../MyOBTRuleset.ruleset</CodeAnalysisRuleSet>
+      <CodeAnalysisRuleSet>../Demo.ruleset</CodeAnalysisRuleSet>
       <Nullable>enable</Nullable>
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
       <WarningsAsErrors />

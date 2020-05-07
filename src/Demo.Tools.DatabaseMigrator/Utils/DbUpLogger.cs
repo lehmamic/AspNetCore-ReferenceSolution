@@ -1,7 +1,7 @@
+using System;
 using DbUp.Engine.Output;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace Demo.Tools.DatabaseMigrator.Utils
 {

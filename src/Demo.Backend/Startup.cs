@@ -78,6 +78,11 @@ namespace Demo.Backend
                 endpoints.MapControllers();
                 endpoints.MapHealthChecks("/health");
             });
+
+            app.MapWhen(x => !x.Request.Path.Value.StartsWith("/api"), builder =>
+            {
+                builder.UseSpa(spa => { });
+            });
         }
     }
 }

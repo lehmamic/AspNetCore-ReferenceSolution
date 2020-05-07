@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="NyOBT Ruleset" Description=" " ToolsVersion="16.0">
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.Features" RuleNamespace="Microsoft.CodeAnalysis.CSharp.Features">
+    <Rule Id="IDE0005" Action="Error" />
+  </Rules>
+  <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
+    <Rule Id="SA0001" Action="None" />
+    <Rule Id="SA1004" Action="Info" />
+    <Rule Id="SA1009" Action="Info" />
+    <Rule Id="SA1026" Action="None" />
+    <Rule Id="SA1101" Action="None" />
+    <Rule Id="SA1111" Action="Info" />
+    <Rule Id="SA1118" Action="Hidden" />
+    <Rule Id="SA1128" Action="None" />
+    <Rule Id="SA1200" Action="Hidden" />
+    <Rule Id="SA1201" Action="Info" />
+    <Rule Id="SA1309" Action="None" />
+    <Rule Id="SA1401" Action="Info" />
+    <Rule Id="SA1404" Action="None" />
+    <Rule Id="SA1413" Action="Error" />
+    <Rule Id="SA1503" Action="Error" />
+    <Rule Id="SA1507" Action="Error" />
+    <Rule Id="SA1600" Action="None" />
+    <Rule Id="SA1602" Action="None" />
+    <Rule Id="SA1611" Action="None" />
+    <Rule Id="SA1615" Action="None" />
+    <Rule Id="SA1633" Action="None" />
+  </Rules>
+</RuleSet>

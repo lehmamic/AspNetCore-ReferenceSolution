@@ -180,4 +180,19 @@ class Build : NukeBuild
                 true).WaitForExit();
         });
 
+    Target DockerRunDevEnv=> _ => _
+        .DependsOn(BuildDockerImage)
+        .Executes(() =>
+        {
+            SetVariable("DOCKER_TAG", GitVersion.GetDockerTag());
+
+            StartProcess(
+                "docker-compose",
+                "-f docker-compose.dev-env.yml up -d",
+                SourceDirectory,
+                Variables,
+                null,
+                true,
+                true).WaitForExit();
+        });
 }
