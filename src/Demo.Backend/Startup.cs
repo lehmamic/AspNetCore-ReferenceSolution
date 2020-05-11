@@ -1,18 +1,18 @@
-using CorrelationId;
-using Demo.Backend.Utils;
-using FluentValidation.AspNetCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using AutoMapper;
+using CorrelationId;
+using Demo.Backend.SwisscomOpenApis;
+using Demo.Backend.Utils;
+using Demo.Backend.Utils.Http;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Polly;
+using Refit;
 using Serilog;
 
 namespace Demo.Backend
@@ -29,11 +29,25 @@ namespace Demo.Backend
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpClient("Swisscom", (serviceProvider, client) =>
+            {
+                client.BaseAddress = new Uri("https://data.swisscom.com/");
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            })
+            .AddTypedClient(RestService.For<ISwisscomOpenDataApi>)
+            .AddHttpClientLogging()
+            .AddTransientHttpErrorPolicy(builder =>
+                builder.WaitAndRetryAsync(
+                    3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
+            services.AddAutoMapper(typeof(Startup).Assembly);
+
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "wwwroot";
             });
-            
+
             services.AddMvc(options =>
             {
                 options.Filters.Add(typeof(ValidatorActionFilter));
@@ -58,6 +72,7 @@ namespace Demo.Backend
                 IncludeInResponse = true,
                 UseGuidForCorrelationId = true,
             });
+            app.UseCorrelationIdLogging();
 
             if (env.IsDevelopment())
             {
@@ -67,7 +82,7 @@ namespace Demo.Backend
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
-            app.UseSerilogRequestLogging();
+            app.UseSerilogRequestLogging(opts => opts.EnrichDiagnosticContext = LogHelper.EnrichFromRequest);
 
             app.UseRouting();
 
