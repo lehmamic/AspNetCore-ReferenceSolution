@@ -1,7 +1,10 @@
 using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Serilog;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Demo.Backend.Utils
 {
@@ -27,6 +30,15 @@ namespace Demo.Backend.Utils
             diagnosticContext.Set("Scheme", request.Scheme);
             diagnosticContext.Set("HttpMode", "INBOUND");
 
+            // Log Request Headers
+            Dictionary<string, StringValues> requestHeaders = request.Headers.ToDictionary(
+                i => i.Key,
+                i => i.Value);
+
+            // remove sensitive Authorization header because it contains the JWT token with personal data
+            requestHeaders.Remove("Authorization");
+            diagnosticContext.Set("RequestHeaders", requestHeaders, true);
+
             // Only set it if available. You're not sending sensitive data in a querystring right?!
             if (request.QueryString.HasValue)
             {
@@ -42,6 +54,17 @@ namespace Demo.Backend.Utils
             {
                 diagnosticContext.Set("EndpointName", endpoint.DisplayName);
             }
+
+            HttpResponse response = httpContext.Response;
+
+            // Set all the common properties available for every response
+
+            // Log Response Headers
+            Dictionary<string, StringValues> responseHeaders = request.Headers.ToDictionary(
+                i => i.Key,
+                i => i.Value);
+
+            diagnosticContext.Set("ResponseHeaders", responseHeaders, true);
         }
     }
 }

@@ -98,6 +98,8 @@ namespace Demo.Backend
                 app.UseDeveloperExceptionPage();
             }
 
+            app.ApplicationServices.UseRebus();
+
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
