@@ -2,6 +2,7 @@ using System;
 using System.Net.Http.Headers;
 using AutoMapper;
 using CorrelationId;
+using Demo.Backend.RebusTest;
 using Demo.Backend.SwisscomOpenApis;
 using Demo.Backend.Utils;
 using Demo.Backend.Utils.Http;
@@ -11,7 +12,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Polly;
+using Rebus.Config;
+using Rebus.DataBus.InMem;
+using Rebus.Persistence.InMem;
+using Rebus.Routing.TypeBased;
+using Rebus.ServiceProvider;
+using Rebus.Transport.InMem;
 using Refit;
 using Serilog;
 
@@ -29,9 +37,12 @@ namespace Demo.Backend
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<SwisscomOpenDataApiOptions>(Configuration.GetSection("SwisscomOpenDataApi"));
+
             services.AddHttpClient("Swisscom", (serviceProvider, client) =>
             {
-                client.BaseAddress = new Uri("https://data.swisscom.com/");
+                var options = serviceProvider.GetRequiredService<IOptions<SwisscomOpenDataApiOptions>>();
+                client.BaseAddress = new Uri(options.Value.BaseAddress);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             })
             .AddTypedClient(RestService.For<ISwisscomOpenDataApi>)
@@ -40,6 +51,14 @@ namespace Demo.Backend
                 builder.WaitAndRetryAsync(
                     3,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
+            services.AddRebus((configure, serviceProvider) => configure
+                .Logging(l => l.Serilog())
+                .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "Demo.Messages"))
+                .Subscriptions(s => s.StoreInMemory(new InMemorySubscriberStore()))
+                .DataBus(b => b.StoreInMemory(new InMemDataStore()))
+                .Routing(c => c.TypeBased().MapAssemblyOf<TestCommand>("Target.Messages"))
+                .Events(e => RebusHelper.EnrichCorrelationId(e, serviceProvider)));
 
             services.AddAutoMapper(typeof(Startup).Assembly);
 
