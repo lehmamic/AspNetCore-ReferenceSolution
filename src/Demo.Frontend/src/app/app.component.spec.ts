@@ -9,7 +9,9 @@ describe('AppComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         RouterTestingModule,
-        TranslateTestingModule.withTranslations('en', {}),
+        TranslateTestingModule.withTranslations('en', {
+          title: 'Demo App!',
+        }),
       ],
       declarations: [
         AppComponent,
@@ -33,6 +35,6 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('.content span').textContent).toContain('demo-frontend app is running!');
+    expect(compiled.querySelector('h1').textContent).toContain('Demo App!');
   });
 });
