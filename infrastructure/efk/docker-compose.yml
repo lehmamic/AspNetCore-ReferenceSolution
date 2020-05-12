@@ -1,0 +1,107 @@
+version: '3.7'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    environment:
+      # https://github.com/docker/swarmkit/issues/1951
+      - node.name={{.Node.Hostname}}
+      - discovery.seed_hosts=elasticsearch
+      - cluster.initial_master_nodes=#{DOCKER_SWARM_MASTER_01}
+      - cluster.name=elastic
+      - network.host=0.0.0.0
+    networks:
+      - elastic
+      - traefik-public
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    deploy:
+      mode: 'global'
+      endpoint_mode: dnsrr
+      restart_policy:
+        condition: any
+        delay: 5s
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.elasticsearch.rule=Host(`elasticsearch#{if Octopus.Environment.Name != "PROD"}-test#{/if}.#{DOMAIN}`)
+        - traefik.http.routers.elasticsearch.entrypoints=websecure
+        - traefik.http.routers.elasticsearch.tls=true
+        - traefik.http.services.elasticsearch.loadbalancer.server.port=9200 # it seems you always need to give traefik a port so it 'notices' the services
+        - traefik.http.routers.elasticsearch.middlewares=elasticsearch-auth
+        - traefik.http.middlewares.elasticsearch-auth.basicauth.users=#{ELASTICSEARCH_USER}
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.0
+    hostname: "{{.Node.Hostname}}-kibana"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - SERVER_NAME="{{.Node.Hostname}}-kibana"
+    depends_on: ['elasticsearch']
+    deploy:
+      mode: global
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.kibana.rule=Host(`kibana#{if Octopus.Environment.Name != "PROD"}-test#{/if}.#{DOMAIN}`)
+        - traefik.http.routers.kibana.entrypoints=websecure
+        - traefik.http.routers.kibana.tls=true
+        - traefik.http.services.kibana.loadbalancer.server.port=5601 # it seems you always need to give traefik a port so it 'notices' the services
+        - traefik.http.routers.kibana.middlewares=kibana-auth
+        - traefik.http.middlewares.kibana-auth.basicauth.users=#{KIBANA_USER}
+    networks:
+      - elastic
+      - traefik-public
+    volumes:
+      - kibanadata:/usr/share/kibana/data
+
+  fluentd:
+    image: ${DOCKER_REGISTRY}/fluentd:${DOCKER_IMAGE_TAG_FLUENTD}
+    environment:
+      FLUENTD_HOSTNAME: '{{.Node.Hostname}}'
+    configs:
+      - source: fluent_conf
+        target: /fluentd/etc/fluent.conf
+        mode: 444
+    ports:
+      - 24224:24224
+      - 24224:24224/udp
+    networks:
+      - elastic
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+        delay: 5s
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  curator:
+    image: ${DOCKER_REGISTRY}/curator:${DOCKER_IMAGE_TAG_CURATOR}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+    networks:
+      - elastic
+
+configs:
+  fluent_conf:
+    file: ./fluentd/conf/fluent.conf
+
+volumes:
+  esdata:
+  kibanadata:
+
+networks:
+  elastic:
+    driver: overlay
+
+  traefik-public:
+    external: true

@@ -1,10 +1,10 @@
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Serilog;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Demo.Backend.Utils
 {

@@ -1,0 +1,4 @@
+tls:
+  certificates:
+    - certFile: /run/secrets/traefik_cert
+      keyFile: /run/secrets/traefik_key
