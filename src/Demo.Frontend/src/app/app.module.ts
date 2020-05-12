@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { IModuleTranslationOptions, ModuleTranslateLoader } from '@larscom/ngx-translate-module-loader';
 import { EffectsModule } from '@ngrx/effects';
-import { RouterState, StoreRouterConnectingModule } from '@ngrx/router-store';
+import { StoreRouterConnectingModule } from '@ngrx/router-store';
 import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
@@ -14,8 +14,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AppEffects } from './app.effects';
 import { metaReducers, reducers } from './app.reducers';
-import { AngularCorrelationIdHttpInterceptor } from './utils/http/http/correlation-id.interceptor';
-import { AngularDateHttpInterceptor } from './utils/http/http/date-parsing.interceptor';
+import { AngularCorrelationIdHttpInterceptor } from './utils/http/correlation-id.interceptor';
+import { AngularDateHttpInterceptor } from './utils/http/date-parsing.interceptor';
 
 export function HttpLoaderFactory(http: HttpClient) {
   const baseTranslateUrl = './assets/i18n';
