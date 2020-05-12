@@ -12,6 +12,7 @@ ng new demo-frontend --routing --skipGit --style=scss
 
 ### Features
 
+* Proxy config to backend on port 5000
 * Correlation Id Interceptor (always adds a correlation id to the requests)
 * Date Http Interceptor (make sure Date properties are Date objects)
 * Translation with ngx-translate

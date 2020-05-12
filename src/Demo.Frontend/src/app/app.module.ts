@@ -15,7 +15,7 @@ export function HttpLoaderFactory(http: HttpClient) {
   const options: IModuleTranslationOptions = {
     modules: [
       { baseTranslateUrl },
-      { baseTranslateUrl: `${baseTranslateUrl}`, moduleName: 'demo-module' },
+      { baseTranslateUrl, moduleName: 'shared' },
     ],
   };
 
