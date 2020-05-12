@@ -10,6 +10,12 @@
 ng new demo-frontend --routing --skipGit --style=scss
 ```
 
+### Features
+
+* Correlation Id Interceptor (Always adds a correlation id to the requests)
+* Date Http Interceptor (Make sure Date properties are Date objects)
+* Translation with ngx-translate
+
 ## Build
 
 The local and ci build is done with [nuke build](https://nuke.build).
