@@ -16,6 +16,7 @@ import { AppEffects } from './app.effects';
 import { metaReducers, reducers } from './app.reducers';
 import { AngularCorrelationIdHttpInterceptor } from './utils/http/correlation-id.interceptor';
 import { AngularDateHttpInterceptor } from './utils/http/date-parsing.interceptor';
+import { RouterEffects } from './utils/router/router.effects';
 
 export function HttpLoaderFactory(http: HttpClient) {
   const baseTranslateUrl = './assets/i18n';
@@ -52,6 +53,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     }),
     EffectsModule.forRoot([
       AppEffects,
+      RouterEffects,
     ]),
     TranslateModule.forRoot({
       defaultLanguage: 'de-CH',
