@@ -2,9 +2,14 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { IModuleTranslationOptions, ModuleTranslateLoader } from '@larscom/ngx-translate-module-loader';
+import { EffectsModule } from '@ngrx/effects';
+import { StoreModule } from '@ngrx/store';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { DemoRoutingModule } from './demo-routing.module';
+import { DemoEffects } from './demo.effects';
+import { demoReducer } from './demo.reducers';
+import { DEMO_STATE_FEATURE_KEY } from './demo.state';
 import { DemoComponent } from './demo/demo.component';
 
 export function HttpLoaderFactory(http: HttpClient) {
@@ -28,6 +33,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     HttpClientModule,
 
     // 3rd Party Modules
+    StoreModule.forFeature(DEMO_STATE_FEATURE_KEY, demoReducer),
+    EffectsModule.forFeature([DemoEffects]),
     TranslateModule.forChild({
       defaultLanguage: 'de-CH',
       loader: {
