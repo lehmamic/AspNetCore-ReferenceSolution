@@ -46,7 +46,7 @@ public partial class Build
                 return;
             }
 
-            var connectionString = "Server=localhost;Database=MyOBT.Portal.Test;User Id=SA;Password=SQLSecure?;";
+            var connectionString = "Server=localhost;Database=Demo.Test;User Id=SA;Password=SQLSecure?;";
             AbsolutePath scriptsDirectory = RootDirectory / "deployment/demo.database/scripts";
 
             DotNetBuild(_ => _
