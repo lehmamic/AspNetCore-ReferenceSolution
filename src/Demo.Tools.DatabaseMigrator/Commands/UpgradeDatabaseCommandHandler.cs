@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DbUp;
+using DbUp.Builder;
 using DbUp.Engine;
+using DbUp.Helpers;
 using Demo.Tools.DatabaseMigrator.Utils;
 using JetBrains.Annotations;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Data.SqlClient;
 
 namespace Demo.Tools.DatabaseMigrator.Commands
 {
@@ -25,13 +28,27 @@ namespace Demo.Tools.DatabaseMigrator.Commands
         {
             _logger.LogDebug("Running with Options={@DbUpOptions}", request);
 
-            var variables = new Dictionary<string, string> { { "environment", request.Environment } };
+            var connectionStringBuilder = new SqlConnectionStringBuilder(request.ConnectionString);
 
-            DatabaseUpgradeResult result = DeployChanges.To.SqlDatabase(request.ConnectionString)
+            var variables = new Dictionary<string, string>
+            {
+                { "environment", request.Environment },
+                { "login_name", connectionStringBuilder.UserID },
+                { "database_name", connectionStringBuilder.InitialCatalog },
+            };
+
+            UpgradeEngineBuilder builder = DeployChanges.To.SqlDatabase(request.ConnectionString)
                 .WithScriptsFromFileSystem(request.ScriptsDirectory)
                 .WithTransaction()
                 .LogToLogger(_logger)
-                .WithVariables(variables)
+                .WithVariables(variables);
+
+            if (!request.EnableJournaling)
+            {
+                builder = builder.JournalTo(new NullJournal());
+            }
+
+            DatabaseUpgradeResult result = builder
                 .Build()
                 .PerformUpgrade();
 

@@ -18,5 +18,9 @@ namespace Demo.Tools.DatabaseMigrator.Commands
         [UsedImplicitly]
         [Option('e', "environment", HelpText = "The environment in which the database is used. (Default is local")]
         public string Environment { get; set; } = "local";
+
+        [UsedImplicitly]
+        [Option('j', "enable-journaling", Default = true, HelpText = "The enables the journaling into the version table. (Default is true")]
+        public bool EnableJournaling { get; set; } = true;
     }
 }
