@@ -1,6 +1,8 @@
+using Jenkins;
 using System;
 using System.Linq;
 using Nuke.Common;
+using Nuke.Common.CI;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
@@ -21,6 +23,16 @@ using static Nuke.Common.Tools.Npm.NpmTasks;
 using static Nuke.Docker.DockerTasks;
 using static Nuke.Common.Tooling.ProcessTasks;
 
+[Jenkins(
+    InvokedTargets = new []
+    {
+        nameof(BuildDockerImage),
+    }
+    // ExcludedTargets = new []
+    // {
+    //     nameof(Clean),
+    // }
+)]
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
 public partial class Build : NukeBuild
@@ -62,6 +74,7 @@ public partial class Build : NukeBuild
 
     Target BackendCompile => _ => _
         .DependsOn(BackendRestore)
+        .Produces("**/bin/**/*", "**/obj/**/*")
         .Executes(() =>
         {
             DotNetBuild(s => s
