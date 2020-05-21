@@ -88,6 +88,7 @@ public partial class Build : NukeBuild
 
     Target BackendTest => _ => _
         .DependsOn(BackendCompile)
+        .Consumes(BackendCompile)
         .Executes(() =>
         {
             DotNetTest(_ => _
@@ -99,7 +100,8 @@ public partial class Build : NukeBuild
         });
 
     Target BackendPublish => _ => _
-        .DependsOn(BackendTest)
+        .DependsOn(BackendTest, BackendCompile)
+        .Consumes(BackendCompile)
         .Executes(() =>
         {
             Project project = Solution.GetProject("Demo.Backend");

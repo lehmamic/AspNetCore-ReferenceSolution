@@ -15,6 +15,8 @@ namespace Jenkins.Configuration
         public JenkinsPipelineAgent Agent { get; set; }
 
         public JenkinsPipelineStash[] Stashes { get; set; }
+        
+        public JenkinsPipelineUnstash[] Unstashes { get; set; }
 
         public override void Write(CustomFileWriter writer)
         {
@@ -24,6 +26,8 @@ namespace Jenkins.Configuration
 
                 using (writer.WriteBlock($"steps"))
                 {
+                    Unstashes?.ForEach(s => s.Write(writer));
+
                     if (IsCheckoutScm)
                     {
                         writer.WriteLine($"checkout scm");

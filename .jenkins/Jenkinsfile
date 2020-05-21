@@ -58,19 +58,22 @@ pipeline {
       agent any
       steps {
         sh 'sh ./build.sh --target BackendCompile' --skip
-        stash name: 'backendcompile_0', includes: '**/bin/**/*'
-        stash name: 'backendcompile_1', includes: '**/obj/**/*'
+        stash name: 'backendcompile_1B1D3A34', includes: '**/obj/**/*'
+        stash name: 'backendcompile_FA5A29E6', includes: '**/bin/**/*'
       }
     }
     stage('BackendTest') {
       agent any
       steps {
+        unstash 'backendtest_FA5A29E6'
         sh 'sh ./build.sh --target BackendTest' --skip
       }
     }
     stage('BackendPublish') {
       agent any
       steps {
+        unstash 'backendpublish_1B1D3A34'
+        unstash 'backendpublish_FA5A29E6'
         sh 'sh ./build.sh --target BackendPublish' --skip
       }
     }

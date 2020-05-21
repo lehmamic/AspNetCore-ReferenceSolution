@@ -16,6 +16,11 @@ namespace Jenkins.Utils
                     "ArtifactProducts",
                     BindingFlags.Static | BindingFlags.NonPublic);
 
+                if (field == null)
+                {
+                    throw new InvalidOperationException($"The field ArtifactProducts does not exist on type {nameof(ArtifactExtensions)}");
+                }
+
                 return (LookupTable<ITargetDefinition, string>)field.GetValue(null);
             }
         }
@@ -27,6 +32,11 @@ namespace Jenkins.Utils
                 FieldInfo field = typeof(ArtifactExtensions).GetField(
                     "ArtifactDependencies",
                     BindingFlags.Static | BindingFlags.NonPublic);
+
+                if (field == null)
+                {
+                    throw new InvalidOperationException($"The field ArtifactDependencies does not exist on type {nameof(ArtifactExtensions)}");
+                }
 
                 return (LookupTable<ITargetDefinition, (Target, string[])>)field.GetValue(null);
             }

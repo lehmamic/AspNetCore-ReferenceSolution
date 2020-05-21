@@ -5,6 +5,7 @@ using Nuke.Common.CI;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities;
+using Nuke.Common.Utilities.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,27 +61,60 @@ namespace Jenkins
 
         protected virtual JenkinsPipelineStage GetStage(ExecutableTarget executableTarget)
         {
-            IEnumerable<string> artifactProduct = ArtifactExtensionsAccessor.ArtifactProducts[executableTarget.GetDefinition()].ToArray();
-            IEnumerable<JenkinsPipelineStash> stashes = artifactProduct.Select((v, i) =>
-                GetStash(executableTarget, v, artifactProduct.Count() > 1 ? $"{i}" : string.Empty));
-Console.WriteLine($"{executableTarget.Name}: produces: {string.Join(", ", ArtifactExtensionsAccessor.ArtifactProducts.Count)}");
+            IEnumerable<string> artifactProduct = executableTarget.GetArtifactProducts().ToArray();
+            IEnumerable<JenkinsPipelineStash> stashes = artifactProduct
+                .Select((v, i) => GetStash(executableTarget, v))
+                .OrderBy(s => s.Name);
+
+            IEnumerable<(Target, string[])> artifactDependencies = ArtifactExtensionsAccessor.ArtifactDependencies[executableTarget.GetDefinition()].ToArray();
+            IEnumerable<JenkinsPipelineUnstash> unstashes = artifactDependencies
+                .SelectMany(d => GetUnstashesFromDependency(executableTarget, d.Item1, d.Item2))
+                .OrderBy(s => s.Name);;
+
             return new JenkinsPipelineStage
             {
                 Name = executableTarget.Name,
                 InvokedTarget = executableTarget.Name,
                 Agent = new JenkinsPipelineAgent(),
                 Stashes = stashes.ToArray(),
+                Unstashes = unstashes.ToArray(),
             };
         }
 
-        protected virtual JenkinsPipelineStash GetStash(ExecutableTarget executableTarget, string includes, string postfix)
+        protected virtual JenkinsPipelineStash GetStash(ExecutableTarget executableTarget, string includes)
         {
-            string fullPostfix = string.IsNullOrWhiteSpace(postfix) ? string.Empty : $"_{postfix}";
             return new JenkinsPipelineStash
             {
-                Name = $"{executableTarget.Name.ToLowerInvariant()}{fullPostfix}",
+                Name = $"{executableTarget.Name.ToLowerInvariant()}_{includes.GetHashCode():X}",
                 Includes = includes,
             };
+        }
+
+        protected virtual IEnumerable<JenkinsPipelineUnstash> GetUnstashesFromDependency(
+            ExecutableTarget executableTarget,
+            Target dependency,
+            string[] artifacts)
+        {
+            IEnumerable<string> consumedArtifacts = artifacts
+                .Select(a => $"{executableTarget.Name.ToLowerInvariant()}_{a.GetHashCode():X}")
+                .ToArray();
+
+            IEnumerable<string> producedArtifacts = executableTarget
+                .ResolveExecutionDependency(dependency)
+                .GetArtifactProducts()
+                .Select(a => $"{executableTarget.Name.ToLowerInvariant()}_{a.GetHashCode():X}")
+                .ToArray();
+
+            if (!consumedArtifacts.Any())
+            {
+                consumedArtifacts = producedArtifacts;
+            }
+
+            return consumedArtifacts.Intersect(producedArtifacts)
+                .Select(a => new JenkinsPipelineUnstash
+                {
+                    Name = a,
+                });
         }
     }
 }
