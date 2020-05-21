@@ -136,7 +136,7 @@ namespace Jenkins
             {
                 return new JenkinsPipelineParallelStage
                 {
-                    Name = "Test",
+                    Name = String.Empty,
                     Stages = stages,
                 };
             }
