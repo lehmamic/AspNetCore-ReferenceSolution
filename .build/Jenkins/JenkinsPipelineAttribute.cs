@@ -20,6 +20,10 @@ namespace Jenkins
 
         public string[] InvokedTargets { get; set; } = new string[0];
 
+        public string CronTrigger { get; set; }
+
+        public string PollTrigger { get; set; } = "* * * * *";
+
         public override HostType HostType => HostType.Jenkins;
 
         public override IEnumerable<string> GeneratedFiles => new[] { JenkinsFile };
@@ -38,6 +42,11 @@ namespace Jenkins
             return new JenkinsConfiguration
             {
                 Stages = GetStages(relevantTargets).ToArray(),
+                Triggers = new JenkinsPipelineTriggers
+                {
+                    CronTrigger = CronTrigger,
+                    PollTrigger = PollTrigger
+                },
             };
         }
         

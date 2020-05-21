@@ -16,6 +16,9 @@
 
 pipeline {
   agent none
+  triggers {
+    pollSCM('* * * * *')
+  }
   stages {
     stage('Checkout') {
       agent any
@@ -51,8 +54,8 @@ pipeline {
           steps {
             unstash 'source'
             sh 'sh ./build.sh --target BackendCompile' --skip
-            stash name: 'backendcompile_3681B69A', includes: '**/bin/**/*'
-            stash name: 'backendcompile_CF9A6A73', includes: '**/obj/**/*'
+            stash name: 'backendcompile_196A8FB8', includes: '**/obj/**/*'
+            stash name: 'backendcompile_63AE7AA4', includes: '**/bin/**/*'
           }
         }
         stage('FrontendBuild') {
@@ -71,8 +74,8 @@ pipeline {
           agent any
           steps {
             unstash 'source'
-            unstash 'backendtest_3681B69A'
-            unstash 'backendtest_CF9A6A73'
+            unstash 'backendtest_196A8FB8'
+            unstash 'backendtest_63AE7AA4'
             sh 'sh ./build.sh --target BackendTest' --skip
           }
         }
@@ -92,8 +95,8 @@ pipeline {
           agent any
           steps {
             unstash 'source'
-            unstash 'backendpublish_3681B69A'
-            unstash 'backendpublish_CF9A6A73'
+            unstash 'backendpublish_196A8FB8'
+            unstash 'backendpublish_63AE7AA4'
             sh 'sh ./build.sh --target BackendPublish' --skip
           }
         }

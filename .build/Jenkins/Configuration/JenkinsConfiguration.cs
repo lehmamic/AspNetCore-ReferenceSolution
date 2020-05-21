@@ -6,6 +6,8 @@ namespace Jenkins.Configuration
 {
     public class JenkinsConfiguration : ConfigurationEntity
     {
+        public JenkinsPipelineTriggers Triggers { get; set; }
+
         public IJenkinsPipelineStage[] Stages { get; set; }
 
         public override void Write(CustomFileWriter writer)
@@ -13,6 +15,8 @@ namespace Jenkins.Configuration
             using (writer.WriteBlock("pipeline"))
             {
                 writer.WriteLine("agent none");
+                Triggers.Write(writer);
+
                 using (writer.WriteBlock("stages"))
                 {
                     Stages.ForEach(x => x.Write(writer));
