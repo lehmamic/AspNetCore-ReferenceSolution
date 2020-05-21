@@ -4,16 +4,18 @@ using Nuke.Common.Utilities.Collections;
 
 namespace Jenkins.Configuration
 {
-    public class JenkinsConfiguration : ConfigurationEntity
+    public class JenkinsPipelineParallelStage : ConfigurationEntity, IJenkinsPipelineStage
     {
+        public string Name { get; set; }
+
         public IJenkinsPipelineStage[] Stages { get; set; }
 
         public override void Write(CustomFileWriter writer)
         {
-            using (writer.WriteBlock("pipeline"))
+            using (writer.WriteBlock($"stage('{Name}')"))
             {
-                writer.WriteLine("agent none");
-                using (writer.WriteBlock("stages"))
+                writer.WriteLine("failFast true");
+                using (writer.WriteBlock($"parallel"))
                 {
                     Stages.ForEach(x => x.Write(writer));
                 }

@@ -4,7 +4,7 @@ using Nuke.Common.Utilities.Collections;
 
 namespace Jenkins.Configuration
 {
-    public class JenkinsPipelineStage : ConfigurationEntity
+    public class JenkinsPipelineStage : ConfigurationEntity, IJenkinsPipelineStage
     {
         public string Name { get; set; }
         

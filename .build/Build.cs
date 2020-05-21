@@ -23,15 +23,11 @@ using static Nuke.Common.Tools.Npm.NpmTasks;
 using static Nuke.Docker.DockerTasks;
 using static Nuke.Common.Tooling.ProcessTasks;
 
-[Jenkins(
+[JenkinsPipeline(
     InvokedTargets = new []
     {
         nameof(BuildDockerImage),
     }
-    // ExcludedTargets = new []
-    // {
-    //     nameof(Clean),
-    // }
 )]
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]

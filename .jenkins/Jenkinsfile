@@ -5,7 +5,7 @@
 //
 //     - To turn off auto-generation set:
 //
-//         [Jenkins (AutoGenerate = false)]
+//         [JenkinsPipeline (AutoGenerate = false)]
 //
 //     - To trigger manual generation invoke:
 //
@@ -24,62 +24,92 @@ pipeline {
         stash name: 'source', includes: '**/*'
       }
     }
-    stage('FrontendInstall') {
-      agent any
-      steps {
-        sh 'sh ./build.sh --target FrontendInstall' --skip
+    stage('Test') {
+      failFast true
+      parallel {
+        stage('BackendRestore') {
+          agent any
+          steps {
+            unstash 'source'
+            sh 'sh ./build.sh --target BackendRestore' --skip
+          }
+        }
+        stage('FrontendInstall') {
+          agent any
+          steps {
+            unstash 'source'
+            sh 'sh ./build.sh --target FrontendInstall' --skip
+          }
+        }
       }
     }
-    stage('FrontendBuild') {
-      agent any
-      steps {
-        sh 'sh ./build.sh --target FrontendBuild' --skip
+    stage('Test') {
+      failFast true
+      parallel {
+        stage('BackendCompile') {
+          agent any
+          steps {
+            unstash 'source'
+            sh 'sh ./build.sh --target BackendCompile' --skip
+            stash name: 'backendcompile_3681B69A', includes: '**/bin/**/*'
+            stash name: 'backendcompile_CF9A6A73', includes: '**/obj/**/*'
+          }
+        }
+        stage('FrontendBuild') {
+          agent any
+          steps {
+            unstash 'source'
+            sh 'sh ./build.sh --target FrontendBuild' --skip
+          }
+        }
       }
     }
-    stage('FrontendTest') {
-      agent any
-      steps {
-        sh 'sh ./build.sh --target FrontendTest' --skip
+    stage('Test') {
+      failFast true
+      parallel {
+        stage('BackendTest') {
+          agent any
+          steps {
+            unstash 'source'
+            unstash 'backendtest_3681B69A'
+            unstash 'backendtest_CF9A6A73'
+            sh 'sh ./build.sh --target BackendTest' --skip
+          }
+        }
+        stage('FrontendTest') {
+          agent any
+          steps {
+            unstash 'source'
+            sh 'sh ./build.sh --target FrontendTest' --skip
+          }
+        }
       }
     }
-    stage('FrontendPublish') {
-      agent any
-      steps {
-        sh 'sh ./build.sh --target FrontendPublish' --skip
-      }
-    }
-    stage('BackendRestore') {
-      agent any
-      steps {
-        sh 'sh ./build.sh --target BackendRestore' --skip
-      }
-    }
-    stage('BackendCompile') {
-      agent any
-      steps {
-        sh 'sh ./build.sh --target BackendCompile' --skip
-        stash name: 'backendcompile_1B1D3A34', includes: '**/obj/**/*'
-        stash name: 'backendcompile_FA5A29E6', includes: '**/bin/**/*'
-      }
-    }
-    stage('BackendTest') {
-      agent any
-      steps {
-        unstash 'backendtest_FA5A29E6'
-        sh 'sh ./build.sh --target BackendTest' --skip
-      }
-    }
-    stage('BackendPublish') {
-      agent any
-      steps {
-        unstash 'backendpublish_1B1D3A34'
-        unstash 'backendpublish_FA5A29E6'
-        sh 'sh ./build.sh --target BackendPublish' --skip
+    stage('Test') {
+      failFast true
+      parallel {
+        stage('BackendPublish') {
+          agent any
+          steps {
+            unstash 'source'
+            unstash 'backendpublish_3681B69A'
+            unstash 'backendpublish_CF9A6A73'
+            sh 'sh ./build.sh --target BackendPublish' --skip
+          }
+        }
+        stage('FrontendPublish') {
+          agent any
+          steps {
+            unstash 'source'
+            sh 'sh ./build.sh --target FrontendPublish' --skip
+          }
+        }
       }
     }
     stage('BuildDockerImage') {
       agent any
       steps {
+        unstash 'source'
         sh 'sh ./build.sh --target BuildDockerImage' --skip
       }
     }
