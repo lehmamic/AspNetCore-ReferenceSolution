@@ -42,7 +42,7 @@ namespace Jenkins.Configuration
                         }
                         else if (Agent.AgentPlatform == JenkinsAgentPlatform.Windows)
                         {
-                            writer.WriteLine($"sh './build.cmd --target {InvokedTarget} --skip'");
+                            writer.WriteLine($"bat './build.cmd --target {InvokedTarget} --skip'");
                         }
                     }
 
