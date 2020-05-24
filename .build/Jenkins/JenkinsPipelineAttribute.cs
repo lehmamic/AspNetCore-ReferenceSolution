@@ -9,7 +9,9 @@ using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 
 namespace Jenkins
 {
@@ -41,21 +43,27 @@ namespace Jenkins
         {
             return new JenkinsConfiguration
             {
+                Agent = new JenkinsPipelineAgent
+                {
+                    AgentType = JenkinsAgentType.None,
+                },
                 Stages = GetStages(relevantTargets).ToArray(),
                 Triggers = new JenkinsPipelineTriggers
                 {
                     CronTrigger = CronTrigger,
-                    PollTrigger = PollTrigger
+                    PollTrigger = PollTrigger,
                 },
             };
         }
-        
+
         protected virtual IEnumerable<IJenkinsPipelineStage> GetStages(IReadOnlyCollection<ExecutableTarget> relevantTargets)
         {
+            IReadOnlyDictionary<string, JenkinsPipelineAgent> registeredAgents = GetRegisteredJenkinsAgents(relevantTargets);
+
             var groupedTargets = new LookupTable<int, ExecutableTarget>();
             GroupByDependencies(groupedTargets, relevantTargets, relevantTargets, 0);
 
-            return groupedTargets.Select(GetGroupedStages)
+            return groupedTargets.Select(g => GetGroupedStages(g, registeredAgents))
                 .Prepend(new JenkinsPipelineStage
                 {
                     Name = "Checkout",
@@ -70,6 +78,45 @@ namespace Jenkins
                         }
                     }
                 });
+        }
+
+        protected virtual IReadOnlyDictionary<string, JenkinsPipelineAgent> GetRegisteredJenkinsAgents(
+            IReadOnlyCollection<ExecutableTarget> relevantTargets)
+        {
+            var result = new Dictionary<string, JenkinsPipelineAgent>();
+            ExecutableTarget target = relevantTargets.FirstOrDefault();
+            if (target != null && target.Member != null && target.Member.DeclaringType != null)
+            {
+                Dictionary<string, JenkinsPipelineAgent> agents = target.Member.DeclaringType
+                    .GetCustomAttributes<JenkinsAgentAttribute>()
+                    .Select(GetRegisteredJenkinsAgent)
+                    .ToDictionary(a => a.Label, a => a);
+
+                result.AddDictionary(agents);
+            }
+
+            return new ReadOnlyDictionary<string, JenkinsPipelineAgent>(result);
+        }
+
+        protected virtual JenkinsPipelineAgent GetRegisteredJenkinsAgent(JenkinsAgentAttribute attribute)
+        {
+            return new JenkinsPipelineAgent
+            {
+                AgentType = attribute.AgentType,
+                AgentPlatform = attribute.AgentPlatform,
+                Label = attribute.Label,
+                CustomWorkspace = attribute.CustomWorkspace,
+                DockerImage = attribute.DockerImage,
+                DockerArgs = attribute.DockerArgs,
+                DockerRegistryUrl = attribute.DockerRegistryUrl,
+                DockerRegistryCredentialsId = attribute.DockerRegistryCredentialsId,
+                DockerFileName = attribute.DockerFileName,
+                DockerContextDirectory = attribute.DockerContextDirectory,
+                DockerAdditionalBuildArgs = attribute.DockerAdditionalBuildArgs,
+                KubernetesYaml = attribute.KubernetesYaml,
+                KubernetesYamlFile = attribute.KubernetesYamlFile,
+                KubernetesDefaultContainer = attribute.KubernetesDefaultContainer,
+            };
         }
 
         protected virtual void GroupByDependencies(
@@ -126,9 +173,9 @@ namespace Jenkins
             return matchedDependencies;
         }
 
-        protected virtual IJenkinsPipelineStage GetGroupedStages(IEnumerable<ExecutableTarget> executableTargets)
+        protected virtual IJenkinsPipelineStage GetGroupedStages(IEnumerable<ExecutableTarget> executableTargets, IReadOnlyDictionary<string, JenkinsPipelineAgent> registeredAgents)
         {
-            IJenkinsPipelineStage[] stages = executableTargets.Select(GetStage)
+            IJenkinsPipelineStage[] stages = executableTargets.Select(t => GetStage(t, registeredAgents))
                 .OrderBy(s => s.Name)
                 .ToArray();
 
@@ -144,7 +191,7 @@ namespace Jenkins
             return stages.First();
         }
 
-        protected virtual JenkinsPipelineStage GetStage(ExecutableTarget executableTarget)
+        protected virtual JenkinsPipelineStage GetStage(ExecutableTarget executableTarget, IReadOnlyDictionary<string, JenkinsPipelineAgent> registeredAgents)
         {
             IEnumerable<string> artifactProduct = executableTarget.GetArtifactProducts().ToArray();
             IEnumerable<JenkinsPipelineStash> stashes = artifactProduct
@@ -160,11 +207,13 @@ namespace Jenkins
                     Name = "source",
                 });
 
+            JenkinsPipelineAgent agent = GetAgent(executableTarget, registeredAgents);
+
             return new JenkinsPipelineStage
             {
                 Name = executableTarget.Name,
                 InvokedTarget = executableTarget.Name,
-                Agent = new JenkinsPipelineAgent(),
+                Agent = agent,
                 Stashes = stashes.ToArray(),
                 Unstashes = unstashes.ToArray(),
             };
@@ -204,6 +253,31 @@ namespace Jenkins
                 {
                     Name = a,
                 });
+        }
+        
+        protected virtual JenkinsPipelineAgent GetAgent(ExecutableTarget executableTarget, IReadOnlyDictionary<string, JenkinsPipelineAgent> registeredAgents)
+        {
+            JenkinsPipelineAgent agent;
+            string agentLabel = executableTarget.GetAgents().FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(agentLabel))
+            {
+                agent = new JenkinsPipelineAgent
+                {
+                    AgentType = JenkinsAgentType.Any,
+                    AgentPlatform = JenkinsAgentPlatform.Unix,
+                };
+            }
+            else if (!registeredAgents.TryGetValue(agentLabel, out agent))
+            {
+                agent = new JenkinsPipelineAgent
+                {
+                    AgentType = JenkinsAgentType.Node,
+                    AgentPlatform = JenkinsAgentPlatform.Unix,
+                    Label = agentLabel,
+                };
+            }
+
+            return agent;
         }
     }
 }

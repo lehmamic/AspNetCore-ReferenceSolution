@@ -1,3 +1,4 @@
+using Jenkins.Utils;
 using Nuke.Common.CI;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
@@ -35,7 +36,14 @@ namespace Jenkins.Configuration
 
                     if (!string.IsNullOrWhiteSpace(InvokedTarget))
                     {
-                        writer.WriteLine($"sh 'sh ./build.sh --target {InvokedTarget}' --skip");
+                        if (Agent.AgentPlatform == JenkinsAgentPlatform.Unix)
+                        {
+                            writer.WriteLine($"sh 'sh ./build.sh --target {InvokedTarget} --skip'");
+                        }
+                        else if (Agent.AgentPlatform == JenkinsAgentPlatform.Windows)
+                        {
+                            writer.WriteLine($"sh './build.cmd --target {InvokedTarget} --skip'");
+                        }
                     }
 
                     Stashes?.ForEach(s => s.Write(writer));

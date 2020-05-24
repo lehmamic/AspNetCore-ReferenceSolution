@@ -6,6 +6,8 @@ namespace Jenkins.Configuration
 {
     public class JenkinsConfiguration : ConfigurationEntity
     {
+        public JenkinsPipelineAgent Agent { get; set; }
+
         public JenkinsPipelineTriggers Triggers { get; set; }
 
         public IJenkinsPipelineStage[] Stages { get; set; }
@@ -14,7 +16,7 @@ namespace Jenkins.Configuration
         {
             using (writer.WriteBlock("pipeline"))
             {
-                writer.WriteLine("agent none");
+                Agent.Write(writer);
                 Triggers.Write(writer);
 
                 using (writer.WriteBlock("stages"))

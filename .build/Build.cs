@@ -1,6 +1,5 @@
 using Jenkins;
-using System;
-using System.Linq;
+using Jenkins.Utils;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.Execution;
@@ -14,20 +13,29 @@ using Nuke.Common.Tools.Npm;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Docker;
 using Utils;
-using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Logger;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.Npm.NpmTasks;
 using static Nuke.Docker.DockerTasks;
-using static Nuke.Common.Tooling.ProcessTasks;
 
 [JenkinsPipeline(
     InvokedTargets = new []
     {
         nameof(BuildDockerImage),
     }
+)]
+[JenkinsAgent(
+    JenkinsAgentType.Kubernetes,
+    JenkinsAgentPlatform.Unix,
+    Label = "dotnet",
+    KubernetesYamlFile = ".jenkins/pod-template.yaml",
+    KubernetesDefaultContainer = "dotnet"
+)]
+[JenkinsAgent(
+    JenkinsAgentType.Node,
+    JenkinsAgentPlatform.Windows,
+    Label = "node"
 )]
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
@@ -62,6 +70,7 @@ public partial class Build : NukeBuild
         });
 
     Target BackendRestore => _ => _
+        .RunsOnAgent("dotnet")
         .Executes(() =>
         {
             DotNetRestore(s => s
@@ -71,6 +80,7 @@ public partial class Build : NukeBuild
     Target BackendCompile => _ => _
         .DependsOn(BackendRestore)
         .Produces("**/bin/**/*", "**/obj/**/*")
+        .RunsOnAgent("dotnet")
         .Executes(() =>
         {
             DotNetBuild(s => s
@@ -85,6 +95,7 @@ public partial class Build : NukeBuild
     Target BackendTest => _ => _
         .DependsOn(BackendCompile)
         .Consumes(BackendCompile)
+        .RunsOnAgent("dotnet")
         .Executes(() =>
         {
             DotNetTest(_ => _
@@ -98,6 +109,7 @@ public partial class Build : NukeBuild
     Target BackendPublish => _ => _
         .DependsOn(BackendTest, BackendCompile)
         .Consumes(BackendCompile)
+        .RunsOnAgent("dotnet")
         .Executes(() =>
         {
             Project project = Solution.GetProject("Demo.Backend");
@@ -117,6 +129,7 @@ public partial class Build : NukeBuild
         });
 
     Target FrontendInstall => _ => _
+        .RunsOnAgent("node")
         .Executes(() =>
         {
             NpmInstall(_ => _
@@ -126,6 +139,7 @@ public partial class Build : NukeBuild
 
     Target FrontendBuild => _ => _
         .DependsOn(FrontendInstall)
+        .RunsOnAgent("node")
         .Executes(() =>
         {
             NpmRun(_ => _
@@ -140,6 +154,7 @@ public partial class Build : NukeBuild
 
     Target FrontendTest => _ => _
         .DependsOn(FrontendBuild)
+        .RunsOnAgent("node")
         .Executes(() =>
         {
             NpmRun(_ => _
@@ -150,6 +165,7 @@ public partial class Build : NukeBuild
     
     Target FrontendPublish => _ => _
         .DependsOn(FrontendTest)
+        .RunsOnAgent("node")
         .Executes(() =>
         {
             CopyDirectoryRecursively(SourceDirectory / "Demo.Frontend" / "dist" / "demo-frontend", ArtifactsDirectory / "publish" / "demo" / "demo.frontend", DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
@@ -157,6 +173,7 @@ public partial class Build : NukeBuild
 
     Target BuildDockerImage => _ => _
         .DependsOn(BackendPublish, FrontendPublish)
+        .RunsOnAgent("docker")
         .Executes(() =>
         {
             Project project = Solution.GetProject("Demo.Backend");
@@ -173,37 +190,5 @@ public partial class Build : NukeBuild
                 .SetFile(ArtifactsDirectory / "publish" / "demo" / "Dockerfile")
                 .SetPath(ArtifactsDirectory)
                 .SetTag($"demo:{GitVersion.GetDockerTag()}"));
-        });
-
-    Target DockerRunDemo=> _ => _
-        .DependsOn(BuildDockerImage)
-        .Executes(() =>
-        {
-            SetVariable("DOCKER_TAG", GitVersion.GetDockerTag());
-
-            StartProcess(
-                "docker-compose",
-                "-f docker-compose.yml up",
-                SourceDirectory,
-                Variables,
-                null,
-                true,
-                true).WaitForExit();
-        });
-
-    Target DockerRunDevEnv=> _ => _
-        .DependsOn(BuildDockerImage)
-        .Executes(() =>
-        {
-            SetVariable("DOCKER_TAG", GitVersion.GetDockerTag());
-
-            StartProcess(
-                "docker-compose",
-                "-f docker-compose.dev-env.yml up -d",
-                SourceDirectory,
-                Variables,
-                null,
-                true,
-                true).WaitForExit();
         });
 }
