@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using DbUp;
@@ -10,7 +11,6 @@ using Demo.Tools.DatabaseMigrator.Utils;
 using JetBrains.Annotations;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Data.SqlClient;
 
 namespace Demo.Tools.DatabaseMigrator.Commands
 {

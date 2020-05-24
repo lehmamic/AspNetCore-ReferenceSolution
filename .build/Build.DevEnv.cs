@@ -2,8 +2,11 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
+using Utils;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.Logger;
+using static Nuke.Common.Tooling.ProcessTasks;
 
 public partial class Build
 {
@@ -70,5 +73,37 @@ public partial class Build
         .DependsOn(Database_Upgrade_Test)
         .Executes(() =>
         {
+        });
+    
+    Target DockerRunDemo=> _ => _
+        .DependsOn(BuildDockerImage)
+        .Executes(() =>
+        {
+            SetVariable("DOCKER_TAG", GitVersion.GetDockerTag());
+
+            StartProcess(
+                "docker-compose",
+                "-f docker-compose.yml up",
+                SourceDirectory,
+                Variables,
+                null,
+                true,
+                true).WaitForExit();
+        });
+
+    Target DockerRunDevEnv=> _ => _
+        .DependsOn(BuildDockerImage)
+        .Executes(() =>
+        {
+            SetVariable("DOCKER_TAG", GitVersion.GetDockerTag());
+
+            StartProcess(
+                "docker-compose",
+                "-f docker-compose.dev-env.yml up -d",
+                SourceDirectory,
+                Variables,
+                null,
+                true,
+                true).WaitForExit();
         });
 }
